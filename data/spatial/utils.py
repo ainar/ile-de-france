@@ -41,7 +41,7 @@ def _sample_from_zones(context, args):
     attribute = context.data("attribute")
 
     random = np.random.RandomState(random_seed)
-    zone = df_zones[df_zones[attribute] == attribute_value]["geometry"].values[0]
+    zone = df_zones[df_zones[attribute] == str(attribute_value)]["geometry"].values[0]
 
     f = df[attribute] == attribute_value
     coordinates = sample_from_shape(zone, np.count_nonzero(f), random)

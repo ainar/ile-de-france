@@ -35,7 +35,8 @@ def find_outside(context, commune_id):
     df = context.data("df")
 
     df = df[df["commune_id"] == commune_id]
-    zone = df_municipalities[df_municipalities["commune_id"] == commune_id]["geometry"].values[0]
+
+    zone = df_municipalities[df_municipalities["commune_id"] == str(commune_id)]["geometry"].values[0]
 
     indices = [
         index for index, x, y in df[["x", "y"]].itertuples()
@@ -63,9 +64,14 @@ def execute(context):
     df["y"] = df["LAMBERT_Y"].astype(np.float)
 
     # Clean IRIS and commune
-    df["iris_id"] = df["DCIRIS"].str.replace("_", "")
-    df.loc[df["DEPCOM"] == df["DCIRIS"], "iris_id"] = "undefined"
-    df.loc[df["DCIRIS"].str.endswith("0000"), "iris_id"] = "undefined"
+    ###df["iris_id"] = str(df["DCIRIS"]).con.replace("_", "")
+    df["iris_id"] = df["DCIRIS"].replace({'_': ''}, regex=True)
+
+    ###df.loc[df["DEPCOM"] == df["DCIRIS"], "iris_id"] = "undefined"
+    df["iris_id"] = df["iris_id"].mask(df["DEPCOM"] == df["DCIRIS"], "undefined")
+
+    ###df.loc[df["DCIRIS"].str.endswith("0000"), "iris_id"] = "undefined"
+    df["iris_id"] = df["iris_id"].mask(df["DCIRIS"].str.endswith("0000", na=True), "undefined")
 
     df["iris_id"] = df["iris_id"].astype("category")
     df["commune_id"] = df["DEPCOM"].astype("category")
@@ -76,7 +82,9 @@ def execute(context):
 
     # Check whether all communes in BPE are within our set of requested data
     df_municipalities = context.stage("data.spatial.municipalities")
-    excess_communes = set(df["commune_id"].unique()) - set(df_municipalities["commune_id"].unique())
+
+    ###excess_communes = set(df["commune_id"].unique()) - set(df_municipalities["commune_id"].unique())
+    excess_communes = set(pd.to_numeric(df["commune_id"])) - set(pd.to_numeric(df_municipalities["commune_id"]))
 
     if len(excess_communes) > 0:
         raise RuntimeError("Found additional communes: %s" % excess_communes)
@@ -97,12 +105,14 @@ def execute(context):
         ((f_missing & ~f_undefined).sum(), len(df), 100 * (f_missing & ~f_undefined).mean()
     )))
 
-    df.update(spatial_utils.sample_from_zones(
-        context, df_iris, df[f_missing & ~f_undefined], "iris_id", random, label = "Imputing IRIS coordinates ..."))
+    if (f_missing & ~f_undefined).sum() > 0 :
+        df.update(spatial_utils.sample_from_zones(
+            context, df_iris, df[f_missing & ~f_undefined], "iris_id", random, label = "Imputing IRIS coordinates ..."))
 
     # Impute missing coordinates for unknown IRIS
-    df.update(spatial_utils.sample_from_zones(
-        context, df_municipalities, df[f_missing & f_undefined], "commune_id", random, label = "Imputing municipality coordinates ..."))
+    if (f_missing & f_undefined).sum() > 0 :
+        df.update(spatial_utils.sample_from_zones(
+            context, df_municipalities, df[f_missing & f_undefined], "commune_id", random, label = "Imputing municipality coordinates ..."))
 
     # Consolidate
     df["imputed"] = f_missing
