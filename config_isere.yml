@@ -15,10 +15,10 @@ config:
   processes: 4
 
   # Define whether to use ENTD or EGT as the household travel survey (HTS)
-  hts: entd
+  hts: emc2_grg
 
   # Define sampling rate and random seed for the output population
-  sampling_rate: 0.01
+  sampling_rate: 0.001
   random_seed: 1234
 
   # Paths to the input data and where the output should be stored
@@ -34,7 +34,7 @@ config:
   # generate_vehicles_method: fleet_sample
   # vehicles_data_year: 2015
 
-  # Isère
+  # Isère settings
   census_path: rp_2019/FD_INDCVIZE_2019.dbf
   regions: []
   departments: [38]
