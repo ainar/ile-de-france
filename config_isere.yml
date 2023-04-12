@@ -24,7 +24,7 @@ config:
   # Paths to the input data and where the output should be stored
   data_path: /path/to/my/data
   output_path: output
-  output_prefix: "isere_"
+  output_prefix: isere_
 
   # Only interesting if you run the simulation
   java_memory: 14G
@@ -35,6 +35,6 @@ config:
   # vehicles_data_year: 2015
 
   # Isère settings
-  census_path: rp_2019/FD_INDCVIZE_2019.dbf
+  census_path: rp_2015/FD_INDCVIZE_2015.dbf
   regions: []
   departments: [38]
