@@ -35,6 +35,6 @@ config:
   # vehicles_data_year: 2015
 
   # Isère settings
-  census_path: rp_2015/FD_INDCVIZE_2015.dbf
   regions: []
   departments: [38]
+  bdtopo_path: bdtopo_isere
