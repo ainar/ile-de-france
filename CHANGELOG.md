@@ -2,6 +2,14 @@
 
 **Under development**
 
+- Update documentation for non-IDF use cases to updated data sets
+- Update: Make use of INSEE RP 2019, BPE 2021, Filosofi 2019, IRIS 2021
+- Make use of BD-TOPO building database for home locations
+- Remove BD-TOPO address database
+- Make use of georeferenced SIRENE provided by INSEE
+- Update documentation for the required versions of Java and Maven
+- Updated Github workflow with more reuse of existing actions
+- Update synpp to `1.5.1`
 - Fix: Handle commas in coordinates in BPE
 - Fix: Make types consistent for mode recognition in ENTD
 - Fix: Properly treat non-movers in EDGT 44
