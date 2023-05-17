@@ -8,8 +8,9 @@ def configure(context):
     context.stage("synthesis.population.spatial.home.locations")
     context.stage("synthesis.locations.work")
     context.stage("synthesis.locations.education")
+    context.config("random_seed")
 
-def define_distance_ordering(df_persons, df_candidates, progress):
+def define_distance_ordering(df_persons, df_candidates, progress, random):
     indices = []
 
     f_available = np.ones((len(df_candidates),), dtype = bool)
@@ -36,14 +37,17 @@ def define_distance_ordering(df_persons, df_candidates, progress):
 
     return indices
 
-def define_random_ordering(df_persons, df_candidates, progress):
+def define_random_ordering(df_persons, df_candidates, progress, random):
+    indices = np.arange(len(df_candidates))
+    random.shuffle(indices)
     progress.update(len(df_candidates))
-    return np.arange(len(df_candidates))
+    return indices
 
 define_ordering = define_distance_ordering
 
-def process_municipality(context, origin_id):
+def process_municipality(context, args):
     # Load data
+    origin_id, seed = args
     df_candidates, df_persons = context.data("df_candidates"), context.data("df_persons")
 
     # Find relevant records
@@ -55,10 +59,12 @@ def process_municipality(context, origin_id):
     # From previous step, this should be equal!
     assert len(df_persons) == len(df_candidates)
 
-    indices = define_ordering(df_persons, df_candidates, context.progress)
+    random = np.random.RandomState(seed)
+    df_person_shuffled = df_persons.sample(frac=1, random_state=random)
+    indices = define_ordering(df_person_shuffled, df_candidates, context.progress, random)
     df_candidates = df_candidates.iloc[indices]
 
-    df_candidates["person_id"] = df_persons["person_id"].values
+    df_candidates["person_id"] = df_person_shuffled["person_id"].values
     df_candidates = df_candidates.rename(columns = dict(destination_id = "commune_id"))
 
     return df_candidates[["person_id", "commune_id", "location_id", "geometry"]]
@@ -67,10 +73,11 @@ def process(context, purpose, df_persons, df_candidates):
     unique_ids = df_candidates["origin_id"].unique()
 
     df_result = []
+    seeds = np.random.RandomState(context.config("random_seed")).randint(9999, size=len(unique_ids))
 
     with context.progress(label = "Distributing %s destinations" % purpose, total = len(df_persons)) as progress:
         with context.parallel(dict(df_persons = df_persons, df_candidates = df_candidates)) as parallel:
-            for df_partial in parallel.imap_unordered(process_municipality, unique_ids):
+            for df_partial in parallel.imap_unordered(process_municipality, zip(unique_ids, seeds)):
                 df_result.append(df_partial)
 
     return pd.concat(df_result).sort_index()

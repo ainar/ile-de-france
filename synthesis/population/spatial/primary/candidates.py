@@ -51,6 +51,7 @@ def sample_locations(context, arguments):
     location_counts = random.multinomial(count, weight)
     location_ids = df_locations["location_id"].values
     location_ids = np.repeat(location_ids, location_counts)
+    random.shuffle(location_ids)
 
     # Construct a data set for all commutes to this zone
     origin_id = np.repeat(df_flow["origin_id"].values, df_flow["count"].values)
